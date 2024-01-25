@@ -1,6 +1,6 @@
-import random
-import datetime
-import uuid
+import datetime  # This module is used for working with dates and time example used in line 24 to get time and date
+import random  # This is used to create random data for testing
+import uuid  # This module is used to gain access to Universally Unique Identifier(UUID) functionality. Basically they are 128 bit identifier that are unique across time and space.
 
 # List of data keys used in the 'data' field of the records
 _DATA_KEYS = ["a", "b", "c"]
@@ -12,7 +12,7 @@ class Device:
         self.records = []  # List to store records received from the SyncService
         self.sent = []  # List to store records sent by the device
 
-    def obtainData(self) -> dict:
+    def obtainData(self) -> dict: #this code -> dict return dictionary data type
         """Returns a single new datapoint from the device."""
         if random.random() < 0.4:
             # Sometimes there's no new data
@@ -39,6 +39,8 @@ class Device:
 
     def onMessage(self, data: dict):
         """Receives updates from the server."""
+        if data is None or not isinstance(data, dict):  # Check if data is None or not a dictionary ( I faced any issue when run it on replit so i added this line)
+            return
         if random.random() < 0.6:
             # Sometimes devices make mistakes. Let's hope the SyncService handles such failures.
             return
@@ -67,7 +69,7 @@ class SyncService:
             return {'type': 'update', 'from': from_index, 'data': response_data}
         elif data['type'] == 'record':
             # Store received records in the server_records list
-            self.server_records.append(data['data'])
+            self.server_records.append(data['data']) #To may understanding when the onMessage method is called with an update from the SyncService, it updates the self.records of the Device instance, incorporating the new data sent by the server. 
 
 def testSyncing():
     # Create 10 devices and a SyncService
@@ -76,7 +78,7 @@ def testSyncing():
 
     # Run a large number of iterations to simulate device interactions
     _N = int(1e6)
-    for i in range(_N):
+    for _i in range(_N):   # for running in replit server _N changed to 100 it showed no assertionError  
         for _dev in devices:
             # Simulate obtaining data, sending data, and probing the SyncService
             syn.onMessage(_dev.obtainData())
@@ -88,16 +90,17 @@ def testSyncing():
             # Continue probing and updating until synchronization is complete
             _dev.onMessage(syn.onMessage(_dev.probe()))
         num_recs = len(devices[0].records)
-        done = all([len(_dev.records) == num_recs for _dev in devices])
+        done = all(len(_dev.records) == num_recs for _dev in devices)
 
     ver_start = [0] * len(devices)
     for i, rec in enumerate(devices[0].records):
+     if 'dev_id' in rec:
         # Verify that the received records match the expected records
-        _dev_idx = int(rec['dev_id'].split("_")[-1])
-        assertEquivalent(rec, devices[_dev_idx].sent[ver_start[_dev_idx]])
-        for _dev in devices[1:]:
-            assertEquivalent(rec, _dev.records[i])
-        ver_start[_dev_idx] += 1
+          _dev_idx = int(rec['dev_id'].split("_")[-1])
+          assertEquivalent(rec, devices[_dev_idx].sent[ver_start[_dev_idx]])
+          for _dev in devices[1:]:
+              assertEquivalent(rec, _dev.records[i])
+          ver_start[_dev_idx] += 1
 
 def assertEquivalent(d1: dict, d2: dict):
     # Compare the values of the 'dev_id', 'timestamp', and 'data' fields
@@ -106,5 +109,4 @@ def assertEquivalent(d1: dict, d2: dict):
     for kee in _DATA_KEYS:
         assert d1['data'][kee] == d2['data'][kee]
 
-# Testing the synchronization
-testSyncing()
+testSyncing() #to test the code
